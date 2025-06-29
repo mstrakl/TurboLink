@@ -3,8 +3,24 @@
 
 #include "Arduino.h"
 #include "crsffront.h"
+#include "crsfmath.h"
 
 namespace TurboLinkCrsf {
+
+    const Point fuelTableGramPerMinute[] = {
+        {  50,  50 },
+        {  60,  60 },
+        {  70,  65 },
+        {  80,  70 },
+        {  90,  90 },
+        { 100, 100 },
+        { 110, 120 },
+        { 120, 140 },
+        { 130, 160 },
+        { 140, 170 },
+        { 150, 210 },
+        { 156, 250 }
+    };
 
 
     class Crsf {
@@ -16,34 +32,51 @@ namespace TurboLinkCrsf {
             m_crsf.begin(serial);
         }
 
-        void update() {
+        const float fuelFlow(const uint32_t rpm) {
+
+            return 0.0;
+        }
+
+        void update(const uint32_t rpm, const int32_t egt) {
+
+            const unsigned int dt = millis() - m_timeLastUpdate;
+            m_timeLastUpdate = millis();
             
-            const float rpm = 156000.0;    // 1/min
-            const float fuelFlow = 350;    // ml/min
-            const float fuelUsed = 2000.0; // ml
-            const float dummy = 0.0;
+            const uint16_t rpm_div_1k = 0.001 * rpm;
+
+            // Fuel flow approximation, in g/min
+            const float fuelFlowGram = interpolateFromTable(
+                rpm_div_1k,     
+                fuelTableGramPerMinute, 
+                sizeof(fuelTableGramPerMinute) / sizeof(Point)
+            );
+
+            // Convert to ml/min, assuming 0.8g/ml density
+            // the factor is 1.25; The real factor is adjusted
+            // to actual fuel used
+            const float fuelFLow = fuelFlowGram * 1.35;
+
+            // Integrate fuel used
+            m_fuelUsed += fuelFLow * dt;
 
             // Factors to scale to uint max
             m_crsf.sendTurbineData1(
-                ((float)m_i/10.0)*rpm,      // rpm (frame: voltage)
-                ((float)m_i/10.0)*fuelFlow, // fuel flow (frame: current)
-                ((float)m_i/10.0)*fuelUsed, // fuel used (frame: consumption)
-                ((float)m_i/10.0)*dummy     // nothing (frame: remaining)
+                (uint16_t)rpm_div_1k*10,  // received as rpm/1000
+                (uint16_t)egt*10, // received as degC
+                (uint16_t)m_fuelUsed*0.001 // fuel used in ml
             );
 
-
-            m_i++;
-
-            if (m_i > 10) {
-                m_i = 0;
-            }
         }
         
         
     private:
         CrsfFront::CrsfTelemetry m_crsf;
 
-        int m_i{0};
+        unsigned long m_timeLastUpdate{0};
+        unsigned long m_fuelUsed{0};
+
+
+
 
     };
 

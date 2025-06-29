@@ -18,15 +18,14 @@ namespace CrsfFront
         }
 
         // Via battery packet
-        void sendTurbineData1(const float &rpm, const float &fuelFlow, const float &fuelUsed, const float &temp1) {
-
+        void sendTurbineData1(const uint16_t &rpm, const uint16_t &egt, const uint16_t &fuelUsed) {
             crsf_sensor_battery_t crsfBatt = {0};
 
             // Values are MSB first (BigEndian)
-            crsfBatt.voltage = htobe16((uint16_t)(rpm/100.0));    // Should appear as rpm*1000 in EdgeTx
-            crsfBatt.current = htobe16((uint16_t)(10*fuelFlow));  // Should appear as ml/min
-            crsfBatt.capacity = htobe16((uint16_t)(fuelUsed )) << 8;  // Should appear as ml used
-            crsfBatt.remaining = (uint8_t)(temp1);                // 0 - 255
+            crsfBatt.voltage = htobe16(rpm); 
+            crsfBatt.current = htobe16(egt); 
+            crsfBatt.capacity = htobe16(fuelUsed) << 8;  // Should appear as ml used
+            crsfBatt.remaining = 0;                // 0 - 255
 
             m_crsf.queuePacket(CRSF_SYNC_BYTE, CRSF_FRAMETYPE_BATTERY_SENSOR, &crsfBatt, sizeof(crsfBatt));
 
