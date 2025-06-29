@@ -8,18 +8,18 @@
 namespace TurboLinkCrsf {
 
     const Point fuelTableGramPerMinute[] = {
-        {  50,  50 },
-        {  60,  60 },
-        {  70,  65 },
-        {  80,  70 },
-        {  90,  90 },
-        { 100, 100 },
-        { 110, 120 },
-        { 120, 140 },
-        { 130, 160 },
-        { 140, 170 },
-        { 150, 210 },
-        { 156, 250 }
+        {  500,  50 },
+        {  600,  60 },
+        {  700,  65 },
+        {  800,  70 },
+        {  900,  90 },
+        { 1000, 100 },
+        { 1100, 120 },
+        { 1200, 140 },
+        { 1300, 160 },
+        { 1400, 170 },
+        { 1500, 210 },
+        { 1560, 250 }
     };
 
 
@@ -32,23 +32,17 @@ namespace TurboLinkCrsf {
             m_crsf.begin(serial);
         }
 
-        const float fuelFlow(const uint32_t rpm) {
-
-            return 0.0;
-        }
 
         void update(const uint32_t rpm, const int32_t egt) {
 
             const unsigned int dt = millis() - m_timeLastUpdate;
             m_timeLastUpdate = millis();
-            
-            const uint16_t rpm_div_1k = 0.001 * rpm;
 
-            if (rpm_div_1k > 45) {
+            if (rpm > 45000) {
 
                 // Fuel flow approximation, in g/min
                 const float fuelFlowGram = interpolateFromTable(
-                    rpm_div_1k,     
+                    (uint16_t)(rpm * 0.01),     
                     fuelTableGramPerMinute, 
                     sizeof(fuelTableGramPerMinute) / sizeof(Point)
                 );
@@ -62,10 +56,12 @@ namespace TurboLinkCrsf {
                 m_fuelUsed += fuelFLow * dt;
 
             } else {
-                
+
                 m_fuelUsed = 0; // Reset if engine stopped
 
             }
+
+            const uint16_t rpm_div_1k = 0.001 * rpm;
 
             // Factors to scale to uint max
             m_crsf.sendTurbineData1(
