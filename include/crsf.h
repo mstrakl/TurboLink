@@ -44,20 +44,28 @@ namespace TurboLinkCrsf {
             
             const uint16_t rpm_div_1k = 0.001 * rpm;
 
-            // Fuel flow approximation, in g/min
-            const float fuelFlowGram = interpolateFromTable(
-                rpm_div_1k,     
-                fuelTableGramPerMinute, 
-                sizeof(fuelTableGramPerMinute) / sizeof(Point)
-            );
+            if (rpm_div_1k > 45) {
 
-            // Convert to ml/min, assuming 0.8g/ml density
-            // the factor is 1.25; The real factor is adjusted
-            // to actual fuel used
-            const float fuelFLow = fuelFlowGram * 1.35;
+                // Fuel flow approximation, in g/min
+                const float fuelFlowGram = interpolateFromTable(
+                    rpm_div_1k,     
+                    fuelTableGramPerMinute, 
+                    sizeof(fuelTableGramPerMinute) / sizeof(Point)
+                );
 
-            // Integrate fuel used
-            m_fuelUsed += fuelFLow * dt;
+                // Convert to ml/min, assuming 0.8g/ml density
+                // the factor is 1.25; The real factor is adjusted
+                // to actual fuel used
+                const float fuelFLow = fuelFlowGram * 1.35;
+
+                // Integrate fuel used
+                m_fuelUsed += fuelFLow * dt;
+
+            } else {
+                
+                m_fuelUsed = 0; // Reset if engine stopped
+
+            }
 
             // Factors to scale to uint max
             m_crsf.sendTurbineData1(
