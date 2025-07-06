@@ -50,10 +50,11 @@ namespace TurboLinkCrsf {
                 // Convert to ml/min, assuming 0.8g/ml density
                 // the factor is 1.25; The real factor is adjusted
                 // to actual fuel used
-                const float fuelFLow = fuelFlowGram * 1.35;
+                const float fuelFlow = fuelFlowGram * 1.35;
+                const float deltaFuel = (fuelFlow/60.0f) * dt*0.001f;
 
                 // Integrate fuel used
-                m_fuelUsed += fuelFLow * dt;
+                m_fuelUsed += deltaFuel;
 
             } else {
 
@@ -63,11 +64,10 @@ namespace TurboLinkCrsf {
 
             const uint16_t rpm_div_1k = 0.001 * rpm;
 
-            // Factors to scale to uint max
             m_crsf.sendTurbineData1(
-                (uint16_t)rpm_div_1k*10,  // received as rpm/1000
-                (uint16_t)egt*10, // received as degC
-                (uint16_t)m_fuelUsed*0.001 // fuel used in ml
+                (uint16_t)rpm_div_1k,  // received as rpm/1000
+                (uint16_t)egt,         // received as degC
+                (uint16_t)m_fuelUsed   // fuel used in ml
             );
 
         }
@@ -77,7 +77,7 @@ namespace TurboLinkCrsf {
         CrsfFront::CrsfTelemetry m_crsf;
 
         unsigned long m_timeLastUpdate{0};
-        unsigned long m_fuelUsed{0};
+        float m_fuelUsed{0};
 
 
 

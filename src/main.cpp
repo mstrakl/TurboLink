@@ -45,6 +45,10 @@ uint16_t decodeResult;
 TurboLinkCrsf::Crsf* Crsf = nullptr;
 unsigned long crsfLastSend = 0;
 
+
+
+#define DEBUG_FAKE_VALUES true
+
 void dbgPrint();
 
 void setup()
@@ -61,18 +65,34 @@ void setup()
 
 void loop()
 {
-  // Read and decode the telemetry data, note that the data will only be decoded for sensors
-  // that that have been passed to the begin method. Print the AppID of the decoded data.
-  decodeResult = decoder.decode();
+
+  if ( ! DEBUG_FAKE_VALUES ) {
+
+    // Read and decode the telemetry data, note that the data will only be decoded for sensors
+    // that that have been passed to the begin method. Print the AppID of the decoded data.
+    decodeResult = decoder.decode();
+
+    if (decodeResult == RPM_T1_DATA_ID || decodeResult == RPM_ROT_DATA_ID) {
+      const uint32_t rxRpm = rpm.getRpm() * 2;
+      const int32_t rxEgt = rpm.getT1();
+
+      Crsf->update(rxRpm, rxEgt);
+
+    } 
+
+  } else {
 
 
-  if (decodeResult == RPM_T1_DATA_ID || decodeResult == RPM_ROT_DATA_ID) {
-    const uint32_t rxRpm = rpm.getRpm() * 2;
-    const int32_t rxEgt = rpm.getT1();
+    const uint32_t rxRpm = 123000;
+    const int32_t rxEgt = 456;
 
     Crsf->update(rxRpm, rxEgt);
 
-  } 
+    delay(250);
+
+
+  }
+
 
 
 

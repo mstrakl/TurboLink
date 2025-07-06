@@ -3,8 +3,21 @@
 
 #include <AlfredoCRSF.h>
 
+
+
 namespace CrsfFront
 {
+
+
+    void printBatteryBytes(const crsf_sensor_battery_t *batt) {
+        const uint8_t *bytes = (const uint8_t *)batt;
+        for (int i = 0; i < sizeof(crsf_sensor_battery_t); ++i) {
+            Serial.print(bytes[i], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
+    }
+
 
     class CrsfTelemetry
     {
@@ -22,12 +35,16 @@ namespace CrsfFront
             crsf_sensor_battery_t crsfBatt = {0};
 
             // Values are MSB first (BigEndian)
-            crsfBatt.voltage = htobe16(rpm); 
-            crsfBatt.current = htobe16(egt); 
-            crsfBatt.capacity = htobe16(fuelUsed) << 8;  // Should appear as ml used
-            crsfBatt.remaining = 0;                // 0 - 255
+            crsfBatt.voltage = htobe16(rpm*10); 
+            crsfBatt.current = htobe16(egt*10); 
+            crsfBatt.capacity = htobe16((uint16_t)(fuelUsed)) << 8;
+
+            static constexpr uint16_t totFuel = 1700;
+            uint8_t remaining = 255 * (totFuel - min(fuelUsed, 1700)) / totFuel;
+            crsfBatt.remaining = remaining;
 
             m_crsf.queuePacket(CRSF_SYNC_BYTE, CRSF_FRAMETYPE_BATTERY_SENSOR, &crsfBatt, sizeof(crsfBatt));
+
 
         }
 
