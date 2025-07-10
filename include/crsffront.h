@@ -18,6 +18,17 @@ namespace CrsfFront
         Serial.println();
     }
 
+    typedef struct crsf_sensor_battery_s2
+    {
+        unsigned voltage : 16;  // V * 10 big endian
+        unsigned current : 16;  // A * 10 big endian
+        unsigned cap1 : 8;
+        //unsigned cap2 : 8;
+        //unsigned cap3 : 8;
+        unsigned capacity : 16; // mah big endian
+        unsigned remaining : 8; // %
+    } PACKED crsf_sensor_battery_t2;
+
 
     class CrsfTelemetry
     {
@@ -32,21 +43,29 @@ namespace CrsfFront
 
         // Via battery packet
         void sendTurbineData1(const uint16_t &rpm, const uint16_t &egt, const uint16_t &fuelUsed) {
-            crsf_sensor_battery_t crsfBatt = {0};
+            crsf_sensor_battery_t2 crsfBatt = {0};
 
             // Values are MSB first (BigEndian)
             crsfBatt.voltage = htobe16(rpm*10); 
             crsfBatt.current = htobe16(egt*10); 
-            crsfBatt.capacity = htobe16((uint16_t)(fuelUsed)) << 8;
+            crsfBatt.capacity = htobe16(fuelUsed);
 
-            static constexpr uint16_t totFuel = 1700;
-            uint8_t remaining = 255 * (totFuel - min(fuelUsed, 1700)) / totFuel;
-            crsfBatt.remaining = remaining;
-
+            float remaining = (1700.0f - min((float)fuelUsed, 1700.0f)) / 1700.0f;
+            crsfBatt.remaining = (uint8_t) (100.0f * remaining);
             m_crsf.queuePacket(CRSF_SYNC_BYTE, CRSF_FRAMETYPE_BATTERY_SENSOR, &crsfBatt, sizeof(crsfBatt));
 
-
+            //delay(50);
+//
+            //uint16_t fuelUsed2 = 950;
+//
+            //crsf_sensor_attitude_t crsfAttitude = {0};
+            //crsfAttitude.pitch = htobe16(fuelUsed2*10);
+            //crsfAttitude.roll = htobe16(0);
+            //crsfAttitude.yaw = htobe16(0);
+            //m_crsf.queuePacket(CRSF_SYNC_BYTE, CRSF_FRAMETYPE_ATTITUDE, &crsfAttitude, sizeof(crsfAttitude));
         }
+
+
 
 //        void sendEscData(const float &voltage, const float &current, const float &capacity, const float &remaining)
 //        {

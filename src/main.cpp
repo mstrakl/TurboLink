@@ -47,7 +47,7 @@ unsigned long crsfLastSend = 0;
 
 
 
-#define DEBUG_FAKE_VALUES true
+#define DEBUG_FAKE_VALUES false
 
 void dbgPrint();
 
